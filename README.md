@@ -1,1 +1,2 @@
-![Диаграмма классов](./39156ef8-afbc-4120-ba0a-859b80205b80.png)
+![Диаграмма классов](![image](https://github.com/user-attachments/assets/deb869da-c583-4fa4-87d0-a150a27f721f)
+)
