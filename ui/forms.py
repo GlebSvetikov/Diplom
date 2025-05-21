@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 from config import AppConfig
 
+
 class StudentCardForm(tk.Toplevel):
     def __init__(self, parent, feature_order, label_categories, callback, cadet_data=None):
         super().__init__(parent)
@@ -12,7 +13,6 @@ class StudentCardForm(tk.Toplevel):
         self.callback = callback
         self.entries = {}
         self.cadet_data = cadet_data or {}
-        self.result = None
         self._setup_ui()
 
     def _setup_ui(self):
@@ -39,6 +39,9 @@ class StudentCardForm(tk.Toplevel):
         inner_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
         grouped_fields = self._group_fields()
+
+        validate_cmd = self.register(self._validate_and_color_field)
+
         row = 0
         for group_name, fields in grouped_fields.items():
             lf = ttk.LabelFrame(inner_frame, text=group_name, padding=(12, 8), style="Bold.TLabelframe")
@@ -48,18 +51,26 @@ class StudentCardForm(tk.Toplevel):
             for i, col in enumerate(fields):
                 if col not in self.feature_order:
                     continue
+
                 lbl = ttk.Label(lf, text=col + ":", font=("Verdana", 11))
                 lbl.grid(row=i, column=0, sticky="w", pady=4, padx=5)
 
                 val = self.cadet_data.get(col, "")
+
                 if col in self.label_categories:
                     widget = ttk.Combobox(lf, values=self.label_categories[col], state="readonly", font=("Verdana", 11))
                     widget.set(val if val in self.label_categories[col] else self.label_categories[col][0])
                 else:
-                    widget = ttk.Entry(lf, font=("Verdana", 11))
+                    widget = tk.Entry(
+                        lf,
+                        font=("Verdana", 11),
+                        validate="key",
+                        validatecommand=(validate_cmd, "%P", "%W")
+                    )
                     widget.insert(0, str(val))
                 widget.grid(row=i, column=1, sticky="ew", pady=4, padx=5)
                 self.entries[col] = widget
+
             row += 1
 
         btn_frame = ttk.Frame(self)
@@ -71,28 +82,55 @@ class StudentCardForm(tk.Toplevel):
         )
         save_btn.pack()
 
+    def _validate_and_color_field(self, proposed_value, widget_name):
+        widget = self.nametowidget(widget_name)
+        if proposed_value == "":
+            widget.configure(bg="white")
+            return True
+
+        try:
+            float(proposed_value.replace(",", "."))
+            widget.configure(bg="white")
+            return True
+        except ValueError:
+            widget.configure(bg="#ffdddd")
+            return False
+
     def _group_fields(self):
         return {
-            "Летная подготовка": ['контрольный налет (час)', 'Тренировочный.налет (час)\n', 'Налет.ВСЭ(час)\n',
-                                   'Общий.налет(час)\n', 'Полет.в.зону.на.ПП', 'Полет.по.марштуру.на.Нсред',
-                                   'Полет.2х180.(под шторкой)'],
-            "Когнитивные и поведенческие особенности": ['Уровень.перцептивн.модальности', 'Ур-нь.интел.лабильн.',
-                                         'Продуктивность.(стэны)', 'Скорость.(стэны)', 'Точность.(стэны)',
-                                         'Эффективность.(стэны)', 'Устойч.внимания.в.1.мин.(стэны)',
-                                         'Устойч.внимания.в.2.мин.(стэны)', 'Самооценка(стэны)', 'Нейротизм.(стэны)',
-                                         'Экстраверсия.(стэны)', 'Открытость.опыту.(стэны)', 'Согласие.(стэны)',
-                                         'Добросовестность.(стэны)', 'Атипичность.ответов.(стэны)',
-                                         'Экстраверсия.(стэны).1'],
-            "Физиология и здоровье": ['Рост (см)', 'Окруж.груд.клет.спокойно (см)', 'Окруж.груд.клет.макс.вдох (см)',
-                             'ДЖЕЛ.(л)', 'Проба.Вальсальвы.после(уд/30сек)', 'Проба.Штанге (сек.)',
-                             'Проба.Генчи (сек.)'],
-            "Каналы восприятия": ['Аудиальный.канал.воспр.', 'Визуальный.канал.воспр', 'Кинестетический.канал.воспр.'],
-            "Психоэмоциональные шкалы": ['Тонус.(стэны)', 'Спокойствие.(стэны)', 'Эмоц.устойчивость.(стэны)',
-                                  'Удовлетвор.жизнью.(стэны)', 'Удовлетвор.жизнью.(стэны).1'],
-            "Навыки": ['Командные.нав.(стэны)', 'Операторские.нав.(стэны)', 'Нав.связи.и.наблюд.(стэны)',
-                       'Водительские.нав.(стэны)', 'Нав.спец.назн.(стэны)', 'Технологические.нав.(стэны)'],
-            "Утомляемость": ['Утомление.(стэны)', 'Умств.утомление.(стэны)', 'Хрон.утомление.(стэны)'],
-            "Ошибки": ['Количество.ошибок', 'Время.обработки.(мин)', 'Количество.ошибок.1']
+            "Летная подготовка": [
+                'контрольный налет (час)', 'Тренировочный.налет (час)\n',
+                'Налет.ВСЭ(час)\n', 'Общий.налет(час)\n',
+                'Полет.в.зону.на.ПП', 'Полет.по.марштуру.на.Нсред', 'Полет.2х180.(под шторкой)'
+            ],
+            "Когнитивные и поведенческие особенности": [
+                'Уровень.перцептивн.модальности', 'Ур-нь.интел.лабильн.',
+                'Продуктивность.(стэны)', 'Скорость.(стэны)', 'Точность.(стэны)',
+                'Эффективность.(стэны)', 'Устойч.внимания.в.1.мин.(стэны)', 'Устойч.внимания.в.2.мин.(стэны)',
+                'Самооценка(стэны)', 'Нейротизм.(стэны)', 'Экстраверсия.(стэны)', 'Открытость.опыту.(стэны)',
+                'Согласие.(стэны)', 'Добросовестность.(стэны)', 'Атипичность.ответов.(стэны)', 'Экстраверсия.(стэны).1'
+            ],
+            "Физиология и здоровье": [
+                'Рост (см)', 'Окруж.груд.клет.спокойно (см)', 'Окруж.груд.клет.макс.вдох (см)',
+                'ДЖЕЛ.(л)', 'Проба.Вальсальвы.после(уд/30сек)', 'Проба.Штанге (сек.)', 'Проба.Генчи (сек.)'
+            ],
+            "Каналы восприятия": [
+                'Аудиальный.канал.воспр.', 'Визуальный.канал.воспр', 'Кинестетический.канал.воспр.'
+            ],
+            "Психоэмоциональные шкалы": [
+                'Тонус.(стэны)', 'Спокойствие.(стэны)', 'Эмоц.устойчивость.(стэны)',
+                'Удовлетвор.жизнью.(стэны)', 'Удовлетвор.жизнью.(стэны).1'
+            ],
+            "Навыки": [
+                'Командные.нав.(стэны)', 'Операторские.нав.(стэны)', 'Нав.связи.и.наблюд.(стэны)',
+                'Водительские.нав.(стэны)', 'Нав.спец.назн.(стэны)', 'Технологические.нав.(стэны)'
+            ],
+            "Утомляемость": [
+                'Утомление.(стэны)', 'Умств.утомление.(стэны)', 'Хрон.утомление.(стэны)'
+            ],
+            "Ошибки": [
+                'Количество.ошибок', 'Время.обработки.(мин)', 'Количество.ошибок.1'
+            ]
         }
 
     def _on_save(self):
@@ -102,11 +140,10 @@ class StudentCardForm(tk.Toplevel):
                 val = widget.get().strip()
                 if not val:
                     raise ValueError(f"Поле «{col}» не должно быть пустым")
+
                 if col not in self.label_categories:
-                    try:
-                        float(val)
-                    except ValueError:
-                        raise ValueError(f"Поле «{col}» должно быть числом")
+                    float(val.replace(",", "."))  # финальная проверка
+
                 cadet_data[col] = val
 
             cadet_data["Уровень успешности в ЛП2"] = self.cadet_data.get("Уровень успешности в ЛП2", "не оценен")
@@ -117,9 +154,11 @@ class StudentCardForm(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
+
 class AddCadetForm(StudentCardForm):
     def __init__(self, parent, feature_order, label_categories, callback):
         super().__init__(parent, feature_order, label_categories, callback)
+
 
 class EditCadetForm(StudentCardForm):
     def __init__(self, parent, feature_order, label_categories, cadet_data, callback):
