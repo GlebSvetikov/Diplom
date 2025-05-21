@@ -67,13 +67,15 @@ class MainView(BaseView):
         window = tk.Toplevel(self.root)
         window.title("Кривая обучения")
 
-        fig, ax = plt.subplots(figsize=(6, 4))
-        ax.plot(train_acc, label='Обучающая выборка')
-        ax.plot(test_acc, label='Тестовая выборка')
-        ax.set_title("График обучения")
-        ax.set_xlabel("Эпохи")
-        ax.set_ylabel("Точность")
-        ax.legend()
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.plot(train_acc, label='Обучающая выборка', linewidth=2)
+        ax.plot(test_acc, label='Тестовая выборка', linewidth=2)
+
+        ax.set_title("График обучения", fontsize=16)
+        ax.set_xlabel("Эпохи", fontsize=14)
+        ax.set_ylabel("Точность", fontsize=14)
+        ax.tick_params(axis='both', labelsize=12)
+        ax.legend(fontsize=12)
         ax.grid(True)
 
         canvas = FigureCanvasTkAgg(fig, master=window)
@@ -87,18 +89,19 @@ class MainView(BaseView):
         window = tk.Toplevel(self.root)
         window.title("Матрица ошибок")
 
-        fig, ax = plt.subplots(figsize=(5, 5))
+        fig, ax = plt.subplots(figsize=(6, 6))
         cax = ax.matshow(cm, cmap='Blues')
 
         for (i, j), val in np.ndenumerate(cm):
-            ax.text(j, i, f"{val}", ha='center', va='center')
+            ax.text(j, i, f"{val}", ha='center', va='center', fontsize=14, weight='bold')
 
-        ax.set_xlabel('Предсказано')
-        ax.set_ylabel('Истинные метки')
+        ax.set_xlabel('Предсказано', fontsize=14)
+        ax.set_ylabel('Истинные метки', fontsize=14)
         ax.set_xticks([0, 1])
         ax.set_yticks([0, 1])
-        ax.set_xticklabels(['Не отчислен', 'Отчислен'])
-        ax.set_yticklabels(['Не отчислен', 'Отчислен'])
+        ax.set_xticklabels(['Не отчислен', 'Отчислен'], fontsize=12)
+        ax.set_yticklabels(['Не отчислен', 'Отчислен'], fontsize=12)
+        ax.tick_params(axis='both', labelsize=12)
         fig.colorbar(cax)
 
         canvas = FigureCanvasTkAgg(fig, master=window)
