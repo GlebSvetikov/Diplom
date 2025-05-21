@@ -115,6 +115,10 @@ class AppController:
         self.view.show_confusion_matrix(self.ml_model.y_test, y_pred)
 
     def add_cadet_manually(self):
+        if self.ml_model.model is None:
+            messagebox.showwarning("Ошибка", "Нельзя добавлять курсантов до обучения модели")
+            return
+
         def submit_callback(data):
             self.data_model.add_cadet(data)
             messagebox.showinfo("Успех", "Курсант успешно добавлен")
@@ -124,17 +128,29 @@ class AppController:
                      submit_callback).grab_set()
 
     def add_cadets_from_file(self):
+        if self.ml_model.model is None:
+            messagebox.showwarning("Предупреждение", "Сначала обучите модель.")
+            return
+
         file_path = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx")])
         if not file_path:
             return
+
         try:
             new_data = pd.read_excel(file_path)
+            expected = set(self.data_model.feature_order)
+            actual = set(new_data.columns)
+            if not expected.issubset(actual):
+                raise ValueError("Некорректный формат данных файла")
+
+            new_data = new_data[self.data_model.feature_order]
             new_data['Уровень успешности в ЛП2'] = 'не оценен'
             self.data_model.cadets_data = pd.concat([self.data_model.cadets_data, new_data], ignore_index=True)
             self.data_model._reorder_columns()
-            messagebox.showinfo("Успех", f"Добавлено {len(new_data)} курсантов")
-        except Exception as e:
-            messagebox.showerror("Ошибка", f"Ошибка загрузки: {str(e)}")
+            messagebox.showinfo("Успех", f"Добавлено курсантов: {len(new_data)}")
+
+        except Exception:
+            messagebox.showerror("Ошибка", "Некорректный формат данных файла")
 
     def show_cadets_table(self):
         if self.data_model.cadets_data.empty:
