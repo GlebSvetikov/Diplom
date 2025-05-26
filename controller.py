@@ -291,6 +291,17 @@ class AppController:
             on_submit
         ).grab_set()
 
+    def show_feature_importance(self):
+        if not self.ml_model.model:
+            messagebox.showwarning("Ошибка", "Сначала обучите модель.")
+            return
+
+        try:
+            importances = self.ml_model.get_feature_importance()
+            self.view.show_feature_importance(importances, self.data_model.feature_order)
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Не удалось отобразить вклад признаков: {e}")
+
     def export_to_excel(self):
         if self.data_model.cadets_data.empty:
             messagebox.showinfo("Информация", "Нет данных для экспорта")

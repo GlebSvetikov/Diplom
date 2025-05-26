@@ -24,6 +24,7 @@ class AppConfig:
         ("Обучить модель", "train_model"),
         ("График обучения", "show_learning_curve"),
         ("Матрица ошибок", "show_confusion_matrix"),
+        ("Гистограмма вклада признаков", "show_feature_importance"),
         ("Добавить курсанта вручную", "add_cadet_manually"),
         ("Добавить курсантов из файла", "add_cadets_from_file"),
         ("Показать добавленных курсантов", "show_cadets_table"),

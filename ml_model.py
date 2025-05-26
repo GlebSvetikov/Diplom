@@ -61,6 +61,12 @@ class MLModel:
             'early_stopped': no_improve >= 10
         }
 
+    def get_feature_importance(self) -> np.ndarray:
+        if not self.model or not hasattr(self.model, 'coefs_'):
+            raise ValueError("Модель не обучена")
+        importances = np.abs(self.model.coefs_[0]).sum(axis=1)
+        return 100.0 * importances / importances.sum()
+
     def predict(self, input_data: List, scaler: StandardScaler) -> int:
         scaled = scaler.transform([input_data])
         return self.model.predict(scaled)[0]
