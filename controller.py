@@ -36,9 +36,10 @@ class AppController:
             X_train, X_test, y_train, y_test = self.data_model.preprocess_data()
             self.ml_model.X_test = X_test
             self.ml_model.y_test = y_test
-
+            original_train_size = len(y_train)
             sm = SMOTE(random_state=42)
             X_train, y_train = sm.fit_resample(X_train, y_train)
+            synthetic_count = len(y_train) - original_train_size
 
             self.ml_model.model = MLPClassifier(hidden_layer_sizes=(50, 20), max_iter=1, warm_start=True, random_state=42)
             self.ml_model.train_accuracies.clear()
@@ -75,7 +76,7 @@ class AppController:
                     break
 
             total_time = time.time() - start_time
-
+            log_lines.append(f"\n📈 SMOTE добавил {synthetic_count} синтетических курсантов.")
             cv_scores = cross_val_score(
                 MLPClassifier(hidden_layer_sizes=(50, 20), max_iter=200, random_state=42),
                 X_train, y_train, cv=5, scoring='accuracy')
