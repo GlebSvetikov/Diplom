@@ -52,23 +52,35 @@ class StudentCardForm(tk.Toplevel):
                 if col not in self.feature_order:
                     continue
 
-                lbl = ttk.Label(lf, text=col + ":", font=("Verdana", 11))
+                lbl = ttk.Label(lf, text=col + ":", font=("Verdana", 11, "bold"))
                 lbl.grid(row=i, column=0, sticky="w", pady=4, padx=5)
 
                 val = self.cadet_data.get(col, "")
 
                 if col in self.label_categories:
-                    widget = ttk.Combobox(lf, values=self.label_categories[col], state="readonly", font=("Verdana", 11))
+                    widget = ttk.Combobox(
+                        lf, values=self.label_categories[col],
+                        state="readonly", font=("Verdana", 11))
                     widget.set(val if val in self.label_categories[col] else self.label_categories[col][0])
+                    widget.grid(row=i, column=1, sticky="ew", pady=4, padx=5)
                 else:
                     widget = tk.Entry(
-                        lf,
-                        font=("Verdana", 11),
+                        lf, font=("Verdana", 11),
                         validate="key",
                         validatecommand=(validate_cmd, "%P", "%W")
                     )
                     widget.insert(0, str(val))
-                widget.grid(row=i, column=1, sticky="ew", pady=4, padx=5)
+                    widget.grid(row=i, column=1, sticky="ew", pady=4, padx=5)
+
+                    idx = self.feature_order.index(col)
+                    limits = self._get_value_range_for_index(idx)
+                    if limits:
+                        min_val, max_val = limits
+                        range_label = tk.Label(
+                            lf, text=f"(от {min_val} до {max_val})",
+                            font=("Verdana", 9), foreground="#555")
+                        range_label.grid(row=i, column=2, sticky="w", padx=5)
+
                 self.entries[col] = widget
 
             row += 1
@@ -84,17 +96,49 @@ class StudentCardForm(tk.Toplevel):
 
     def _validate_and_color_field(self, proposed_value, widget_name):
         widget = self.nametowidget(widget_name)
+        col_name = None
+        for name, w in self.entries.items():
+            if str(w) == widget_name:
+                col_name = name
+                break
+
         if proposed_value == "":
             widget.configure(bg="white")
             return True
 
         try:
-            float(proposed_value.replace(",", "."))
+            value = float(proposed_value.replace(",", "."))
+            if col_name:
+                idx = self.feature_order.index(col_name)
+                limits = self._get_value_range_for_index(idx)
+                if limits:
+                    min_val, max_val = limits
+                    if not (min_val <= value <= max_val):
+                        widget.configure(bg="#ffdddd")  
+                        return False
+
             widget.configure(bg="white")
             return True
         except ValueError:
             widget.configure(bg="#ffdddd")
             return False
+        
+    def _get_value_range_for_index(self, idx):
+            ranges = {
+                **dict.fromkeys(range(0, 2), (0, 15)),         
+                **dict.fromkeys(range(2, 5), (0, 200)),        
+                5: (0, 600),                                   
+                6: (140, 215),                                 
+                **dict.fromkeys(range(7, 9), (60, 120)),       
+                9: (0, 15),                                    
+                **dict.fromkeys(range(10, 13), (15, 180)),     
+                **dict.fromkeys(range(13, 37), (0, 15)),       
+                37: (0, 50),                                   
+                38: (0, 30),                                   
+                39: (0, 50),                                   
+                **dict.fromkeys(range(41, 46), (0, 15)),       
+            }
+            return ranges.get(idx)
 
     def _group_fields(self):
         return {
