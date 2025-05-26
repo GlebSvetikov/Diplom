@@ -5,6 +5,8 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 from config import AppConfig
 from ui.base_view import BaseView
+import matplotlib.cm as cm
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 class MainView(BaseView):
     def __init__(self, root: tk.Tk, controller):
@@ -81,6 +83,56 @@ class MainView(BaseView):
         canvas = FigureCanvasTkAgg(fig, master=window)
         canvas.draw()
         canvas.get_tk_widget().pack(pady=10, fill='both', expand=True)
+
+    def show_feature_importance(self, importances: np.ndarray, feature_names: list):
+        window = tk.Toplevel(self.root)
+        window.title("Вклад признаков в прогноз")
+        window.geometry("1000x600")  
+
+        sorted_idx = np.argsort(importances)[::-1]
+        sorted_importances = importances[sorted_idx]
+        sorted_features = [feature_names[i] for i in sorted_idx]
+
+        fig_width = max(12, len(sorted_features) * 0.7)
+        fig, ax = plt.subplots(figsize=(fig_width, 6))
+        colors = cm.get_cmap('tab20', len(sorted_features)).colors
+
+        bars = ax.bar(range(len(sorted_features)), sorted_importances, color=colors)
+
+        ax.set_title("Чувствительность признаков", fontsize=20, pad=20)
+        ax.set_ylabel("Вклад (%)", fontsize=14)
+        ax.set_xticks(range(len(sorted_features)))
+        ax.set_xticklabels(sorted_features, rotation=45, ha='right', fontsize=10)
+        ax.tick_params(axis='y', labelsize=11)
+        ax.grid(axis='y', linestyle='--', alpha=0.4)
+        fig.subplots_adjust(bottom=0.35, top=0.9)
+
+        container = tk.Frame(window)
+        container.pack(fill='both', expand=True)
+
+        scroll_x = tk.Scrollbar(container, orient='horizontal')
+        scroll_x.pack(side='bottom', fill='x')
+
+        canvas = tk.Canvas(container, xscrollcommand=scroll_x.set, bg='white', highlightthickness=0)
+        canvas.pack(side='left', fill='both', expand=True)
+        scroll_x.config(command=canvas.xview)
+
+        inner_frame = tk.Frame(canvas, bg='white')
+        canvas_window = canvas.create_window((0, 0), window=inner_frame, anchor='nw')
+
+        fig_canvas = FigureCanvasTkAgg(fig, master=inner_frame)
+        fig_widget = fig_canvas.get_tk_widget()
+        fig_widget.pack(fill='both', expand=True)
+        fig_canvas.draw()
+
+        def on_inner_configure(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def on_canvas_configure(event):
+            canvas.itemconfig(canvas_window, height=event.height)
+
+        inner_frame.bind("<Configure>", on_inner_configure)
+        canvas.bind("<Configure>", on_canvas_configure)
 
     def show_confusion_matrix(self, y_true: np.ndarray, y_pred: np.ndarray):
         from sklearn.metrics import confusion_matrix
